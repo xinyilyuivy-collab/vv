@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>热点转基金讨论区工作台</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar card">
+      <div class="brand-mark">HF</div>
+      <h1>热点转基金讨论区</h1>
+      <p class="sidebar-desc">全新独立版工作台。把热点、行情和产品持仓一起压进生成流程，输出更像真实基民发言。</p>
+
+      <div class="sidebar-block">
+        <div class="sidebar-title">当前状态</div>
+        <div class="sidebar-stat">
+          <span>时间</span>
+          <strong id="timeDisplay">读取中...</strong>
+        </div>
+        <div class="sidebar-stat">
+          <span>盘面</span>
+          <strong id="periodDisplay">读取中...</strong>
+        </div>
+        <div class="sidebar-stat">
+          <span>模型</span>
+          <strong id="modelDisplay">读取中...</strong>
+        </div>
+        <button id="refreshContextBtn" class="secondary-btn" type="button">刷新上下文</button>
+        <button id="resetTokenBtn" class="secondary-btn" type="button">重置访问口令</button>
+        <button id="navRefreshBtn" class="secondary-btn" type="button">刷新净值</button>
+        <div id="navRefreshStatus" class="nav-status-text"></div>
+      </div>
+
+      <div class="sidebar-block">
+        <div class="sidebar-title">写作原则</div>
+        <ul class="rule-list">
+          <li>先情绪，后逻辑</li>
+          <li>像真实持仓用户，不像分析师</li>
+          <li>必须绑定基金持仓特点</li>
+          <li>不需要刻意区分上午盘和下午盘</li>
+        </ul>
+      </div>
+    </aside>
+
+    <main class="main-panel">
+      <section class="hero card">
+        <div class="hero-main">
+          <div>
+            <div class="hero-badge">Fresh App</div>
+            <h2>热点转基金讨论区工作台</h2>
+            <p>把热点、产品持仓和行情记录压到一条生成链路里，减少来回切换文档，直接产出可发帖内容。</p>
+          </div>
+          <div class="hero-metrics">
+            <div class="metric-chip">
+              <span>产品池</span>
+              <strong>12 只</strong>
+            </div>
+            <div class="metric-chip">
+              <span>模型</span>
+              <strong id="heroModelDisplay">读取中...</strong>
+            </div>
+            <div class="metric-chip">
+              <span>行情源</span>
+              <strong>行情记录</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <section class="card form-card">
+          <div class="section-head">
+            <h3>生成配置</h3>
+            <span>完成配置后发起生成</span>
+          </div>
+
+          <div class="field-group">
+            <div class="field-label-row">
+              <label>基金选择</label>
+              <span>先选产品，再定帖子方向</span>
+            </div>
+            <div class="option-grid" id="fundOptions">
+              <button type="button" class="option-card" data-fund="017560">科创芯片<span>017560</span></button>
+              <button type="button" class="option-card" data-fund="011145">汇宏<span>011145</span></button>
+              <button type="button" class="option-card" data-fund="025759">新兴动力<span>025759</span></button>
+              <button type="button" class="option-card" data-fund="020982">机器人<span>020982</span></button>
+              <button type="button" class="option-card" data-fund="160424">创业板50<span>160424</span></button>
+              <button type="button" class="option-card" data-fund="014542">新能源主题<span>014542</span></button>
+              <button type="button" class="option-card" data-fund="025733">航天航空<span>025733</span></button>
+              <button type="button" class="option-card" data-fund="020867">港股央企红利<span>020867</span></button>
+              <button type="button" class="option-card" data-fund="007168">安和债券<span>007168</span></button>
+              <button type="button" class="option-card" data-fund="016071">智联混合<span>016071</span></button>
+              <button type="button" class="option-card" data-fund="000217">黄金<span>000217</span></button>
+              <button type="button" class="option-card" data-fund="017825">新材料<span>017825</span></button>
+            </div>
+          </div>
+
+          <div class="field-group">
+            <div class="field-label-row">
+              <label>主题方向</label>
+              <span>情绪入口决定帖子口气</span>
+            </div>
+            <div class="chip-row" id="themeOptions">
+              <button type="button" class="chip" data-theme="引导加仓">引导加仓</button>
+              <button type="button" class="chip" data-theme="引导持有">引导持有</button>
+              <button type="button" class="chip" data-theme="回血庆祝">回血庆祝</button>
+              <button type="button" class="chip" data-theme="踏空后悔">踏空后悔</button>
+              <button type="button" class="chip" data-theme="终于等到回调">终于等到回调</button>
+              <button type="button" class="chip" data-theme="净值对比">净值对比</button>
+            </div>
+          </div>
+
+          <div class="inline-fields">
+            <div class="field-group">
+              <div class="field-label-row">
+                <label>帖子类型</label>
+                <span>控制字数和结构</span>
+              </div>
+              <div class="chip-row" id="typeOptions">
+                <button type="button" class="chip" data-type="千粉帖">千粉帖</button>
+                <button type="button" class="chip" data-type="短帖">短帖</button>
+                <button type="button" class="chip" data-type="对比帖">对比帖</button>
+              </div>
+            </div>
+            <div class="field-group">
+              <div class="field-label-row">
+                <label for="countInput">数量</label>
+                <span>1-20</span>
+              </div>
+              <input id="countInput" type="number" min="1" max="20" value="5">
+            </div>
+          </div>
+
+          <div class="field-group">
+            <div class="field-label-row">
+              <label for="hotspotInput">热点描述</label>
+              <span>这里写盘面、催化和你想强调的情绪</span>
+            </div>
+            <textarea id="hotspotInput" placeholder="例如：上午光模块冲得很猛，下午虽然回落但没走坏，情绪还是强；机器人板块低位回暖，市场开始重新预期催化。"></textarea>
+          </div>
+
+          <div class="field-group">
+            <div class="field-label-row">
+              <label for="extraInput">补充要求</label>
+              <span>写语气、人设、限制项</span>
+            </div>
+            <textarea id="extraInput" placeholder="例如：口吻偏老基民一点，不要太亢奋，想多一点回本后的松口气感觉。"></textarea>
+          </div>
+
+          <div class="actions">
+            <button id="generateBtn" class="primary-btn" type="button" disabled>生成帖子</button>
+            <div id="statusText" class="status-text">等待配置完成</div>
+          </div>
+        </section>
+
+        <section class="card preview-card">
+          <div class="section-head">
+            <h3>上下文预览</h3>
+            <span>生成前快速确认</span>
+          </div>
+
+          <div class="preview-grid">
+            <div class="preview-item">
+              <span>基金</span>
+              <strong id="previewFund">未选择</strong>
+            </div>
+            <div class="preview-item">
+              <span>主题</span>
+              <strong id="previewTheme">未选择</strong>
+            </div>
+            <div class="preview-item">
+              <span>类型</span>
+              <strong id="previewType">未选择</strong>
+            </div>
+            <div class="preview-item">
+              <span>数量</span>
+              <strong id="previewCount">5</strong>
+            </div>
+          </div>
+
+          <div class="context-box">
+            <div class="context-title">热点输入</div>
+            <div id="hotspotPreview" class="context-content">尚未填写</div>
+          </div>
+
+          <div class="context-box">
+            <div class="context-title">行情记录</div>
+            <pre id="marketNotes" class="context-content context-pre">读取中...</pre>
+          </div>
+        </section>
+      </section>
+
+      <section class="card result-card">
+        <div class="section-head">
+          <h3>生成结果</h3>
+          <div class="result-actions">
+            <span class="result-tip">支持单条复制和整组复制</span>
+            <button id="copyAllBtn" class="secondary-btn" type="button">复制全部</button>
+          </div>
+        </div>
+        <div id="resultList" class="result-list">
+          <div class="empty-state">结果会显示在这里。</div>
+        </div>
+      </section>
+    </main>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+fresh_app/.env
+fresh_app/__pycache__/
+__pycache__/
+.DS_Store

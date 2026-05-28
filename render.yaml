@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: huaan-hotspot-fresh-app
+    runtime: python
+    plan: free
+    buildCommand: pip install -r fresh_app/requirements.txt
+    startCommand: python fresh_app/app.py
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: 10000
+      - key: MODEL_PROVIDER
+        value: openai_compatible
+      - key: MODEL_API_BASE
+        sync: false
+      - key: MODEL_API_KEY
+        sync: false
+      - key: MODEL_NAME
+        value: glm-5.1
+      - key: MODEL_API_TIMEOUT
+        value: 90
+      - key: MODEL_MAX_TOKENS
+        value: 65536
+      - key: MODEL_TEMPERATURE
+        value: 1.0
+      - key: OPENAI_THINKING_ENABLED
+        value: 1
+      - key: ACCESS_TOKEN
+        sync: false
+      - key: NAV_REFRESH_ENABLED
+        value: 1
