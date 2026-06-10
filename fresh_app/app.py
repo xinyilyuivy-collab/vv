@@ -33,6 +33,7 @@ FUND_INFO = {
     "016071": "智联混合",
     "000217": "黄金",
     "017825": "新材料",
+    "014978": "纳斯达克100",
 }
 
 
@@ -169,15 +170,32 @@ def fetch_all_previous_changes() -> tuple[list[dict], list[str]]:
     return items, failed
 
 
+def previous_trade_day_label(now: datetime, trade_date: str) -> str:
+    try:
+        trade_dt = datetime.strptime(trade_date, "%Y-%m-%d")
+    except ValueError:
+        return "前一交易日"
+
+    delta_days = (now.date() - trade_dt.date()).days
+    if delta_days == 1:
+        return "昨日"
+    if now.weekday() == 0 and delta_days == 3 and trade_dt.weekday() == 4:
+        return "上周五"
+    if delta_days > 1:
+        return "前一交易日"
+    return "昨日"
+
+
 def build_market_nav_block(items: list[dict]) -> str:
     now = datetime.now(ZoneInfo("Asia/Shanghai"))
     today = now.strftime("%Y-%m-%d")
     current_time = now.strftime("%H:%M")
     nav_date = items[0]["date"] if items else ""
+    day_label = previous_trade_day_label(now, nav_date) if nav_date else "前一交易日"
     lines = [
         f"## {today}",
         "",
-        f"### 昨日收盘涨跌幅（自动刷新 {current_time}）",
+        f"### {day_label}收盘涨跌幅（自动刷新 {current_time}）",
     ]
     for item in items:
         lines.append(f"- {item['code']} {item['alias']}: {item['change_pct']}（{item['date']}）")
@@ -303,7 +321,8 @@ def build_prompt(data: dict) -> str:
 4. 不写对话，不给明确买卖建议，不写场内盘中交易动作。
 5. 每条情绪、句式、人设都要明显区分。
 6. {output_rule}
-7. 除帖子正文外，不要输出任何解释说明。
+7. 不要输出 Markdown 格式符号，不要出现 **、##、###、- 列表、> 引用、``` 代码块。
+8. 除帖子正文外，不要输出任何解释说明。
 """
 
 

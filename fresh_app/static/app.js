@@ -22,6 +22,7 @@ const fundMap = {
   "016071": "智联混合",
   "000217": "黄金",
   "017825": "新材料",
+  "014978": "纳斯达克100",
 };
 
 function bindSingleSelect(selector, key, attrName) {
@@ -112,6 +113,15 @@ function escapeHtml(text) {
     .replace(/'/g, "&#39;");
 }
 
+function sanitizeGeneratedText(text) {
+  return String(text || "")
+    .replace(/\*\*(.*?)\*\*/g, "$1")
+    .replace(/^#{1,6}\s*/gm, "")
+    .replace(/^>\s*/gm, "")
+    .replace(/```/g, "")
+    .trim();
+}
+
 function renderPosts(content) {
   const posts = splitPosts(content);
   const list = document.getElementById("resultList");
@@ -121,17 +131,18 @@ function renderPosts(content) {
   }
 
   list.innerHTML = posts.map((post, index) => {
-    const lines = post.split("\n").filter(Boolean);
+    const cleanPost = sanitizeGeneratedText(post);
+    const lines = cleanPost.split("\n").filter(Boolean);
     const hasTitle = state.postType !== "短帖";
     const title = hasTitle ? lines[0] : "";
-    const body = hasTitle ? lines.slice(1).join("\n") : post;
+    const body = hasTitle ? lines.slice(1).join("\n") : cleanPost;
     return `
       <article class="result-item">
         <div class="result-head">
           <strong>#${index + 1} · ${escapeHtml(state.postType)}</strong>
-          <button class="secondary-btn" type="button" data-copy="${escapeHtml(post)}">复制本条</button>
+          <button class="secondary-btn" type="button" data-copy="${escapeHtml(cleanPost)}">复制本条</button>
         </div>
-        <div class="result-body" data-raw="${escapeHtml(post)}">
+        <div class="result-body" data-raw="${escapeHtml(cleanPost)}">
           ${hasTitle ? `<span class="result-title">${escapeHtml(title)}</span>` : ""}
           ${escapeHtml(body)}
         </div>
@@ -196,7 +207,9 @@ async function generate() {
 }
 
 async function copyAll() {
-  const blocks = Array.from(document.querySelectorAll(".result-body")).map((node) => decodeHtml(node.dataset.raw || "")).filter(Boolean);
+  const blocks = Array.from(document.querySelectorAll(".result-body"))
+    .map((node) => sanitizeGeneratedText(decodeHtml(node.dataset.raw || "")))
+    .filter(Boolean);
   if (!blocks.length) {
     return;
   }
