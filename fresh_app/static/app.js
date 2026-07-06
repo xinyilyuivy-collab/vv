@@ -25,6 +25,8 @@ const fundMap = {
   "014978": "纳斯达克100",
   "013618": "大安全升级",
   "016742": "大中华升级",
+  "008777": "沪深300",
+  "015283": "恒生科技",
 };
 
 function bindSingleSelect(selector, key, attrName) {

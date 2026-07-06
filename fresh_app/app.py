@@ -3,6 +3,7 @@ import json
 import os
 import re
 import subprocess
+import threading
 from datetime import datetime
 from pathlib import Path
 from urllib.error import HTTPError, URLError
@@ -36,6 +37,8 @@ FUND_INFO = {
     "014978": "纳斯达克100",
     "013618": "大安全升级",
     "016742": "大中华升级",
+    "008777": "沪深300",
+    "015283": "恒生科技",
 }
 
 
@@ -446,6 +449,8 @@ class Handler(BaseHTTPRequestHandler):
         self.send_response(status)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(payload)))
+        self.send_header("Cache-Control", "no-store, max-age=0")
+        self.send_header("Pragma", "no-cache")
         self.end_headers()
         self.wfile.write(payload)
 
@@ -472,7 +477,7 @@ class Handler(BaseHTTPRequestHandler):
             self._send_bytes(200, (TEMPLATE_DIR / "index.html").read_bytes(), "text/html; charset=utf-8")
             return
 
-        if self.path.startswith("/api/") or self.path == "/healthz":
+        if self.path.startswith("/api/"):
             if not self._is_authorized():
                 self._send_json(401, {"error": "未授权访问"})
                 return
@@ -531,10 +536,15 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
-    try:
-        refresh_market_navs()
-    except Exception as exc:
-        print(f"[nav-refresh] 启动时刷新失败: {exc}")
+    if NAV_REFRESH_ENABLED:
+        def refresh_on_boot() -> None:
+            try:
+                refresh_market_navs()
+            except Exception as exc:
+                print(f"[nav-refresh] 启动时刷新失败: {exc}")
+
+        threading.Thread(target=refresh_on_boot, daemon=True).start()
+
     print("=" * 56)
     print("  热点转基金讨论区 - 全新前端程序")
     print(f"  地址: http://{HOST}:{PORT}")
