@@ -39,6 +39,8 @@ FUND_INFO = {
     "016742": "大中华升级",
     "008777": "沪深300",
     "015283": "恒生科技",
+    "021938": "半导体产业",
+    "013483": "医疗创新",
 }
 
 
@@ -73,8 +75,7 @@ MODEL_MAX_TOKENS = int(os.getenv("MODEL_MAX_TOKENS", "65536"))
 MODEL_TEMPERATURE = float(os.getenv("MODEL_TEMPERATURE", "1.0"))
 OPENAI_THINKING_ENABLED = os.getenv("OPENAI_THINKING_ENABLED", "0") in ("1", "true", "TRUE", "yes", "YES")
 NAV_REFRESH_ENABLED = os.getenv("NAV_REFRESH_ENABLED", "1") in ("1", "true", "TRUE", "yes", "YES")
-FUND_NAV_API_BASE = os.getenv("FUND_NAV_API_BASE", "https://fundgz.1234567.com.cn/js")
-FUND_HISTORY_API_BASE = os.getenv("FUND_HISTORY_API_BASE", "http://fundf10.eastmoney.com/F10DataApi.aspx")
+FUND_NAV_API_BASE = os.getenv("FUND_NAV_API_BASE", "https://api.fund.eastmoney.com/f10/lsjz")
 import ssl as _ssl
 _NAV_SSL_CONTEXT = _ssl._create_unverified_context()
 
@@ -83,8 +84,9 @@ def read_text(path: Path) -> str:
     return path.read_text(encoding="utf-8").strip()
 
 
-def fetch_previous_nav(code: str) -> dict | None:
-    url = f"{FUND_NAV_API_BASE}/{code}.js"
+def fetch_latest_nav(code: str) -> dict | None:
+    """从东财API获取最新净值和涨跌幅"""
+    url = f"{FUND_NAV_API_BASE}?callback=jQuery&fundCode={code}&pageIndex=1&pageSize=1"
     req = Request(
         url,
         headers={
@@ -100,7 +102,7 @@ def fetch_previous_nav(code: str) -> dict | None:
         print(f"[nav-refresh] {code} 拉取失败: {exc}")
         return None
 
-    match = re.search(r"jsonpgz\((\{.*\})\);?$", raw)
+    match = re.search(r"jQuery\((\{.*\})\);?$", raw)
     if not match:
         print(f"[nav-refresh] {code} 返回格式异常")
         return None
@@ -111,54 +113,41 @@ def fetch_previous_nav(code: str) -> dict | None:
         print(f"[nav-refresh] {code} 解析失败: {exc}")
         return None
 
-    nav = str(data.get("dwjz", "")).strip()
-    nav_date = str(data.get("jzrq", "")).strip()
+    lsjz_list = data.get("Data", {}).get("LSJZList", [])
+    if not lsjz_list:
+        print(f"[nav-refresh] {code} 无净值数据")
+        return None
+
+    row = lsjz_list[0]
+    nav = str(row.get("DWJZ", "")).strip()
+    nav_date = str(row.get("FSRQ", "")).strip()
+    change_pct = str(row.get("JZZZL", "")).strip()
+
     if not nav or not nav_date:
         print(f"[nav-refresh] {code} 缺少净值字段")
         return None
 
     return {
         "code": code,
-        "name": str(data.get("name", "")).strip(),
         "nav": nav,
         "date": nav_date,
+        "change_pct": change_pct,
     }
 
 
 def fetch_previous_change(code: str) -> dict | None:
-    url = f"{FUND_HISTORY_API_BASE}?type=lsjz&code={code}&page=1&per=1&sdate=&edate="
-    req = Request(
-        url,
-        headers={
-            "User-Agent": "Mozilla/5.0",
-            "Referer": "https://fund.eastmoney.com/",
-        },
-        method="GET",
-    )
-    try:
-        with urlopen(req, timeout=15, context=_NAV_SSL_CONTEXT) as resp:
-            raw = resp.read().decode("utf-8", errors="replace")
-    except Exception as exc:
-        print(f"[nav-refresh] {code} 历史涨跌幅拉取失败: {exc}")
+    """获取最新净值日的涨跌幅（复用 fetch_latest_nav）"""
+    data = fetch_latest_nav(code)
+    if not data:
         return None
-
-    row_match = re.search(r"<tbody>\s*<tr>(.*?)</tr>\s*</tbody>", raw, re.S)
-    if not row_match:
-        print(f"[nav-refresh] {code} 历史涨跌幅返回格式异常")
-        return None
-
-    cells = re.findall(r"<td[^>]*>(.*?)</td>", row_match.group(1), re.S)
-    cleaned = [re.sub(r"<.*?>", "", cell).replace("&nbsp;", "").strip() for cell in cells]
-    if len(cleaned) < 4:
-        print(f"[nav-refresh] {code} 历史涨跌幅字段不足")
-        return None
-
-    trade_date = cleaned[0]
-    change_pct = cleaned[3] or "0.00%"
+    change = data.get("change_pct", "")
+    # 补上百分号
+    if change and not change.endswith("%"):
+        change = f"{change}%"
     return {
         "code": code,
-        "date": trade_date,
-        "change_pct": change_pct,
+        "date": data["date"],
+        "change_pct": change or "0.00%",
     }
 
 
